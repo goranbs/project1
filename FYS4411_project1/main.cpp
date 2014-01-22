@@ -12,42 +12,98 @@ Calculations on the Hydrogen atom
 using namespace std;
 using namespace arma;
 
-define pi = 3.14159265358979323846;
+#define pi 4*arctan(1);          // pi
+#define hbar 6.625*pow(10,-34)   // Planck's reduced constant
+#define masse 9.109*pow(10,-31)  // mass of electron
 
-double V(x){
-  return -k*Z/(x*alpha);
+double potential(double x, double k, double alpha, int Z){
+    return -k*Z/(x*alpha);
 }
 
-int main(int nargs, char * args[]){
+int main(int argc, char* argv[]) {
 
-  long int *idum;
-  idum = new long int;
-  *idum = -time(0);
-  double h,Rmin,Rmax,hbar,k,m,alpha;
-  int Nstep,Z;
-  cx_vec u_off,u_diag,eigval;
-  cx_mat eigvec, x;
-  mat A = mat(Nstep-1,Nstep-1);
+    double k, m, Rmax, Rmin, alpha, h, lambda, eu;
+    int l, Z, Nstep;
+    k = 1.44;        // eVnm
+    m = masse;       // mass of electron
+    Rmin = 0;        // min radius (Bohr distances)
+    Rmax = 10.0;     // max radius (Bohr distances)
+    l = 0;           //
+    Z = 1;           // atomic number
+    Nstep = 100;      // number of intervalls
+    alpha = hbar*hbar/(k*Z*m);
+    h = (Rmax-Rmin)/Nstep;
+    eu = -1/(2*h*h);
 
-  Rmax = 10; Rmin=0;
-  Nstep = 100;
-  h = (Rmax-Rmin)/Nstep;
 
-  Z = 1;                       // atomic number
-  k = 1.44;                    // eVnm
-  m = 1.06*10E-19;             // Coulomb
-  hbar = 6.626*10E-34/(2*pi);  // m*m*kg/s, Planck reduced constant
-  alpha = hbar*hbar/(k*Z*m);   // dimentionless coefficient
-  u_off = (hbar*hbar/(k*Z*m)-1)/h; // matrix elements, off and diagonal elements of tridiagonal mx 
-  for (i=0,i<Nstep,i++):
-    x[i] = Rmin + i*h;
+    //rowvec x(Nstep),d(Nstep),sub_d(Nstep);   // vectors containing diagonal and off-diagonal elements
+    //mat U = zeros(Nstep,Nstep); // matrix containing the normalized eigenvectors on the k'th row, correstponding to d[k]
 
-  
-  
-  
+    double *x, *d, *sub_d, **U;
+    d = new double[Nstep-2];
+    x = new double[Nstep-2];
+    sub_d = new double[Nstep-2];
+    U = new double*[Nstep-2];
 
-  return 0;
+    for (int i=0;i<(Nstep-2);i++){
+        U[i] = new double[Nstep-2];
+    }
+    for (int i=0;i<(Nstep-2);i++){
+        // does not include the boundaries!
+        x[i] = Rmin + (i+1)*h;
+        sub_d[i] = eu;
+        d[i] = (1/(h*h) + (l*(l+1))/(2*x[i]*x[i]) - 1/x[i]);
+        U[i][i] = 1.0;
+    }
+
+
+    // Use the library function tqli to solve the eigenvalue problem
+    tqli(d,sub_d,Nstep-2,U);
+
+    /*
+    // have a look at the results:
+    for (int i=0;i<(Nstep-2);i++){
+        for (int j=0;j<(Nstep-2);j++){
+            cout << U[i][j] << " ";
+        }
+        cout << endl;
+    }
+    */
+    cout << "-----------------------------------------------------------" << endl;
+    cout << "x"<< endl;
+    for (int i = 0; i < (Nstep-2); ++i) {
+        cout << x[i] <<  endl;
+    }
+    cout << "-----------------------------------------------------------" << endl;
+    cout << "sub_d"<< endl;
+    for (int i = 0; i < (Nstep-2); ++i) {
+        cout << sub_d[i] << endl;
+    }
+    cout << "-----------------------------------------------------------" << endl;
+    cout << "d"<< endl;
+    for (int i = 0; i < (Nstep-2); ++i) {
+        cout << d[i] << endl;
+    }
+    cout << "-----------------------------------------------------------" << endl;
+
+    //find the lowest eigenvalue in the d-array:
+    double min_eig = d[0];
+    for (int i = 1; i < Nstep - 2 ; ++i) {
+        if (d[i] < d[i-1]){
+            if (d[i] < d[i+1]){
+                if (d[i] < min_eig){
+                    min_eig = d[i];
+                }
+            }
+        }
+    }
+    cout << min_eig << endl;
+    return 0;
 }
+
+
+
+
 
 
 
