@@ -8,7 +8,10 @@ Calculations on the Hydrogen atom
 #include <iomanip>
 #include <time.h>
 #include <armadillo>
-#include <lib.h>
+#include <string>      // to_string
+#include <lib.h>       //tqli, free_matrix
+#include <testingHFSolve.h>
+
 
 using namespace std;
 using namespace arma;
@@ -20,9 +23,6 @@ using namespace arma;
 double potential(double x, double k, double alpha, int Z){
     return -k*Z/(x*alpha);
 }
-
-int comp(const double, const double);
-void output(double,double, int, double);
 
 int main(int argc, char* argv[]) {
 
@@ -72,7 +72,7 @@ int main(int argc, char* argv[]) {
         }
         cout << endl;
     }
-    */
+    *
     cout << "-----------------------------------------------------------" << endl;
     cout << "x"<< endl;
     for (int i = 0; i < (Nstep-2); ++i) {
@@ -89,33 +89,42 @@ int main(int argc, char* argv[]) {
         cout << d[i] << endl;
     }
     cout << "-----------------------------------------------------------" << endl;
-
+    */
     //find the lowest eigenvalue in the d-array:
     double min_eig = d[0];
+    int index = 0;
     for (int i = 1; i < Nstep - 2 ; ++i) {
         if (d[i] < d[i-1]){
             if (d[i] < d[i+1]){
                 if (d[i] < min_eig){
                     min_eig = d[i];
+                    index = i;
                 }
             }
         }
     }
-    cout << min_eig << endl;
+    cout << "min eigenvalue: " << min_eig << endl;
+    cout << "index of the min eigenvalue: " << index << endl;
 
+    // column number (int) index, is the corresponding eigenvector to the min eingenvalue.
 
-    // this (lower) part is not finished yet, I do not know why it isn't working, but the debugger say
-    // that the reference to the functions comp() and to output() is undefined.
+    double *eigenvec;
+    eigenvec = new double[Nstep-2];
+    for (int i=0;i<Nstep-2;i++){
+        eigenvec[i] = U[i][index];
+    }
 
-    /*Sort the matrix values, need to store the eigenvalues from smallest to largest in a vector
-      where the indexes of the original positions of the eigenvalues is the indexes of the columns
-      in the unsorted matrix containing the corresponding eigenvectors.
-      */
-
-    qsort(d,(UL) Nstep - 1,sizeof(double),(int(*)(const void *,const void *))comp);
-
-    // write to outputfile
-    output(Rmin,Rmax,Nstep,*d);
+    ofstream myfile;
+    myfile.open("results01.out");
+    myfile << "Results of the numerical calculations on the Hydrogen atom2 " << endl;
+    myfile << "Rmin= " << Rmin << endl;
+    myfile << "Rmax= " << Rmax << endl;
+    myfile << "min_eig= " << min_eig << endl;
+    for (int i=0;i<Nstep-2;i++){
+        //std::string intstr = "eigvec_" + std::to_string(i);
+        myfile << "probabilitydensity: " << eigenvec[i]*eigenvec[i] << endl;
+    }
+    myfile.close();
 
     // free memory:
     free_matrix((void **) U);
@@ -123,31 +132,9 @@ int main(int argc, char* argv[]) {
     delete [] d;
     delete [] sub_d;
 
+    int kappa = mainf();
+
     return 0;
-} // End: main()
-
-
-
-
-int comp(const double *val_1, const double *val_2){
-  if((*val_1) <= (*val_2))       return -1;
-  else  if((*val_1) > (*val_2))  return +1;
-  else                     return  0;
-} // End: function comp()
-
-void output(double r_min,double r_max, int N_step, double *d){
-    ofstream myfile;
-    myfile.open("results.txt");
-    myfile << "RESULTS:" << endl;
-    myfile << setiosflags(ios::showpoint | ios::uppercase);
-    myfile << "Rmin = " << setw(15) << setprecision(8) << r_min << endl;
-    myfile << "Rmax = " << setw(15) << setprecision(8) << r_max << endl;
-    myfile << "Number of steps = " << setw(15) << N_step << endl;
-    myfile << "Eigenvalues: " << endl;
-    for (int i=0;i<N_step-1;i++){
-        myfile << setw(15) << setprecision(8) << d[i] << endl;
-    }
-    myfile.close();
 } // End: function output()
 
 
