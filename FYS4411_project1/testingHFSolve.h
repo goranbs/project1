@@ -35,6 +35,10 @@ int mainf(){
     }
     cout << "---------------------------" << endl;
 
+    // now we have created V. Then it is time to call the solver
+
+    object.Solve(V);
+
 
     return 0;
 }

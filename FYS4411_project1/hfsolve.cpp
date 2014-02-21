@@ -97,3 +97,80 @@ double HFSolve::state(int p, int q, int r, int s, double D, double Ex){
     }
     return S;
 }
+
+double HFSolve::h0(int alpha,int gamma){
+    // the one-boy interaction
+
+    double h = 0;
+    if (alpha == gamma){
+         h = 1;
+    }
+
+    return h;
+}
+
+
+
+mat HFSolve::HF(mat C, field<mat> V){
+    /* Sets up the Hartree-Fock matrix
+     * using the coefficients given in C
+     */
+
+    mat HFmx;
+    HFmx.zeros(C.n_rows, C.n_cols);
+    for (int alpha = 0; alpha < 6; ++alpha) {
+        for (int gamma = 0; gamma < 6; ++gamma) {
+            double interaction = 0;
+            for (int p = 0; p < 6; ++p) {
+                for (int beta = 0; beta < 6; ++beta) {
+                    for (int delta = 0; delta < 6; ++delta) {
+                        interaction = interaction + C(p,beta)*C(p,delta)*V(alpha,beta)(gamma,delta);
+                        //interaction = interaction + 0*alpha + 0*beta + 0*gamma + 0*delta + 0*p;
+                    }
+                }
+            }
+            HFmx(alpha,gamma) = h0(alpha,gamma) + interaction;
+        }
+    }
+    return HFmx;
+}
+
+void HFSolve::Solve(field<mat> V){
+    /* Sets up the identity matrix as the initial guess
+     * on how the coefficient matrix C should look like
+     * And solves the HF equations
+     */
+    double tolerance = 10e-14;
+
+    mat C;
+    vec e_v, e_v_prev;
+    C.zeros(6,6);
+    e_v.zeros(6);
+    e_v_prev.zeros(6);
+    for (int i = 0; i < 6; ++i) {
+        C(i,i) = 1.0;
+    }
+
+    int iters = 0;
+    while (abs(min(e_v) - min(e_v_prev)) > tolerance){ // convergence test
+        iters = iters + 1;
+        e_v_prev = e_v;
+        // return the eigenvalues of the HF-mx to e_v and the eigenvectors to C.
+        eig_sym(e_v,C,HF(C,V));
+        C = trans(C);
+
+    }
+    cout << "------------------------------" << endl;
+    cout << "iterations: " << iters << endl;
+    cout << "eigenvalues: " << endl;
+    for (int i = 0; i < 6; ++i) {
+        cout << e_v[i] << endl;
+    }
+    cout << "------------------------------" << endl;
+
+
+}
+
+
+
+
