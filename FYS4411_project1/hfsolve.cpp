@@ -152,12 +152,20 @@ void HFSolve::Solve(field<mat> V){
     }
 
     int iters = 0;
-    while (abs(min(e_v) - min(e_v_prev)) > tolerance){ // convergence test
+    e_v_prev(0) = 1.0; // safety margin
+
+    cout << "diff.max() : " << abs(e_v.max() - e_v_prev.max()) << endl;
+    while (abs(e_v.max() - e_v_prev.max()) > tolerance){ // convergence test
         iters = iters + 1;
+        cout << "in while iteration: " << iters << endl;
+        for (int i = 0; i < 6; ++i) {
+            cout << e_v_prev(i) << " " << e_v(i) << endl;
+        }
         e_v_prev = e_v;
         // return the eigenvalues of the HF-mx to e_v and the eigenvectors to C.
         eig_sym(e_v,C,HF(C,V));
         C = trans(C);
+
 
     }
     cout << "------------------------------" << endl;
